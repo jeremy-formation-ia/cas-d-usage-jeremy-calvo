@@ -44,3 +44,8 @@ EDUCATION_ORDER = [
     "professional.course",
     "university.degree",
 ]
+
+# Modélisation
+N_SPLITS = 5
+DECISION_THRESHOLD = 0.5
+PRIMARY_METRIC = "f1_macro"
