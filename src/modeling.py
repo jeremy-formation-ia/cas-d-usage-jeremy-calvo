@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import clone
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     confusion_matrix,
@@ -144,6 +145,20 @@ def threshold_analysis(estimator, columns, X, y, thresholds=None, n_splits=N_SPL
             "n_missed": int(((y == 1) & (pred == 0)).sum()),
         })
     return pd.DataFrame(rows)
+
+
+def permutation_importances(pipeline, X, y, scoring="f1_macro", n_repeats=10) -> pd.Series:
+    """Importance des variables d'origine par permutation.
+
+    Mélange une colonne à la fois et mesure la perte de performance. Renvoie
+    une série triée par ordre décroissant, indexée par nom de variable d'origine.
+    """
+    result = permutation_importance(
+        pipeline, X, y, scoring=scoring, n_repeats=n_repeats,
+        random_state=RANDOM_STATE, n_jobs=-1,
+    )
+    importances = pd.Series(result.importances_mean, index=X.columns)
+    return importances.sort_values(ascending=False)
 
 
 if __name__ == "__main__":

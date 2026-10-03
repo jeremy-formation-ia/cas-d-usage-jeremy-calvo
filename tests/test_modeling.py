@@ -12,6 +12,7 @@ from src.modeling import (
     make_models,
     make_pipeline,
     measure_cost,
+    permutation_importances,
     threshold_analysis,
 )
 from src.preprocessing import build_scenarios
@@ -98,4 +99,14 @@ def test_threshold_analysis_monotonic_recall(small_data):
     assert table["recall_positive"].iloc[0] >= table["recall_positive"].iloc[-1]
     # Et augmente le nombre de contacts
     assert table["n_contacted"].iloc[0] >= table["n_contacted"].iloc[-1]
+
+
+def test_permutation_importances(small_data):
+    X, y = small_data
+    pipeline = make_pipeline(make_models()["logreg"], list(X.columns))
+    pipeline.fit(X, y)
+    importances = permutation_importances(pipeline, X, y, n_repeats=3)
+    assert set(importances.index) == set(X.columns)
+    # Trié par ordre décroissant
+    assert importances.is_monotonic_decreasing
 
