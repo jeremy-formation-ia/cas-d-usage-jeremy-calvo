@@ -14,7 +14,7 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.pipeline import Pipeline
 
 from src.config import (
@@ -113,6 +113,37 @@ def measure_cost(estimator, columns, X, y, n_samples=1000) -> dict:
     pipeline.predict_proba(sample)
     inference_ms = (time.perf_counter() - t0) * 1000
     return {"fit_time_s": round(fit_time, 3), "inference_ms_per_1k": round(inference_ms, 3)}
+
+
+def threshold_analysis(estimator, columns, X, y, thresholds=None, n_splits=N_SPLITS) -> pd.DataFrame:
+    """Impact du seuil de décision, estimé en validation croisée sur le train.
+
+    Les probabilités out-of-fold évitent de faire le choix du seuil sur le
+    jeu de test. On rapporte précision, rappel, F1 et F2 pour chaque seuil.
+    """
+    from sklearn.metrics import fbeta_score
+
+    if thresholds is None:
+        thresholds = [0.2, 0.25, 0.3, 0.35, 0.4, 0.5]
+
+    splitter = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=RANDOM_STATE)
+    pipeline = make_pipeline(clone(estimator), columns)
+    proba = cross_val_predict(pipeline, X, y, cv=splitter, method="predict_proba")[:, 1]
+
+    rows = []
+    for th in thresholds:
+        pred = (proba >= th).astype(int)
+        rows.append({
+            "threshold": th,
+            "precision_positive": precision_score(y, pred, pos_label=1, zero_division=0),
+            "recall_positive": recall_score(y, pred, pos_label=1),
+            "f1_positive": f1_score(y, pred, pos_label=1, zero_division=0),
+            "f1_macro": f1_score(y, pred, average="macro", zero_division=0),
+            "f2_positive": fbeta_score(y, pred, beta=2, pos_label=1, zero_division=0),
+            "n_contacted": int(pred.sum()),
+            "n_missed": int(((y == 1) & (pred == 0)).sum()),
+        })
+    return pd.DataFrame(rows)
 
 
 if __name__ == "__main__":

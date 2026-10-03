@@ -12,6 +12,7 @@ from src.modeling import (
     make_models,
     make_pipeline,
     measure_cost,
+    threshold_analysis,
 )
 from src.preprocessing import build_scenarios
 
@@ -84,3 +85,17 @@ def test_measure_cost_returns_timings(small_data):
     cost = measure_cost(make_models()["logreg"], list(X.columns), X, y, n_samples=50)
     assert cost["fit_time_s"] >= 0
     assert cost["inference_ms_per_1k"] >= 0
+
+
+def test_threshold_analysis_monotonic_recall(small_data):
+    X, y = small_data
+    table = threshold_analysis(
+        make_models()["logreg"], list(X.columns), X, y,
+        thresholds=[0.2, 0.5, 0.8], n_splits=3,
+    )
+    assert list(table["threshold"]) == [0.2, 0.5, 0.8]
+    # Baisser le seuil augmente (ou maintient) le rappel
+    assert table["recall_positive"].iloc[0] >= table["recall_positive"].iloc[-1]
+    # Et augmente le nombre de contacts
+    assert table["n_contacted"].iloc[0] >= table["n_contacted"].iloc[-1]
+
