@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    image: bank-marketing-api:${MODEL_TAG:-local}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/home/appuser/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    image: bank-marketing-ui:${MODEL_TAG:-local}
+    ports:
+      - "8501:8501"
+    environment:
+      API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy

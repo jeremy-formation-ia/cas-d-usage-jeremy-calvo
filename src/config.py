@@ -49,3 +49,18 @@ EDUCATION_ORDER = [
 N_SPLITS = 5
 DECISION_THRESHOLD = 0.5
 PRIMARY_METRIC = "f1_macro"
+
+# Modèle retenu (arbitrage §6)
+FINAL_SCENARIO = "S4"
+FINAL_THRESHOLD = 0.30
+MODEL_NAME = "bank_marketing"
+MODEL_VERSION = "v1.0.0"
+
+# Zone d'incertitude (abstention), autour du seuil retenu
+REJECTION_LOW = 0.25
+REJECTION_HIGH = 0.35
+
+# Persistance
+MODELS_DIR = REPO_ROOT / "models"
+MODEL_PATH = MODELS_DIR / "model.joblib"
+METADATA_PATH = MODELS_DIR / "model.json"

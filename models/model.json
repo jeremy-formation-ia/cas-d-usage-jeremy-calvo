@@ -1,0 +1,40 @@
+{
+  "model_name": "bank_marketing",
+  "model_version": "v1.0.0",
+  "created_at": "2026-10-02T14:18:50.117801+00:00",
+  "scenario": "S4",
+  "decision_threshold": 0.3,
+  "sklearn_version": "1.5.1",
+  "python_version": "3.11.15",
+  "dataset_sha256": "74adfc578bf77a7ff4bb1ba4a9f8709d9e3c6907342959c2c8416847e0afb4d8",
+  "feature_columns": [
+    "default",
+    "housing",
+    "loan",
+    "contact",
+    "month",
+    "day_of_week",
+    "emp.var.rate",
+    "cons.price.idx",
+    "cons.conf.idx",
+    "euribor3m",
+    "nr.employed"
+  ],
+  "metrics_test": {
+    "f1_macro": 0.4768,
+    "f1_positive": 0.2944,
+    "precision_positive": 0.178,
+    "recall_positive": 0.8513,
+    "roc_auc": 0.8066,
+    "confusion_matrix": [
+      [
+        3660,
+        3648
+      ],
+      [
+        138,
+        790
+      ]
+    ]
+  }
+}

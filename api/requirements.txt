@@ -1,0 +1,16 @@
+# API de prédiction — Marketing bancaire
+
+fastapi==0.115.4
+uvicorn[standard]==0.32.0
+pydantic==2.10.0
+loguru==0.7.2
+
+# Le modèle doit être rechargé avec la même version de scikit-learn
+scikit-learn==1.5.1
+pandas>=2.2,<3
+numpy>=2,<3
+joblib>=1.4,<2
+
+# Tests
+pytest>=8,<9
+httpx>=0.27,<1
