@@ -28,8 +28,26 @@ jobs:
       - name: Run the test suite (includes the model contract test)
         run: pytest -v
 
-  build:
+  evaluate:
     needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Continuous evaluation (blocks the release on regression)
+        run: python -m src.evaluate --release-tag "${{ github.ref_name }}"
+
+  build:
+    needs: [test, evaluate]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:

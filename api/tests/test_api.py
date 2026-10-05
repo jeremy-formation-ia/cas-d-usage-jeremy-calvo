@@ -55,3 +55,11 @@ def test_predict_missing_field_returns_422(client, valid_payload):
     payload = {k: v for k, v in valid_payload.items() if k != "euribor3m"}
     r = client.post("/predict", json=payload)
     assert r.status_code == 422
+
+
+def test_metrics_endpoint_exposes_business_metrics(client, valid_payload):
+    client.post("/predict", json=valid_payload)
+    r = client.get("/metrics")
+    assert r.status_code == 200
+    assert "bank_marketing_predictions_total" in r.text
+    assert "bank_marketing_prediction_probability" in r.text

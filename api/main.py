@@ -15,9 +15,11 @@ import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request, status
 from loguru import logger
+from prometheus_fastapi_instrumentator import Instrumentator
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from api.metrics import observe_prediction
 from api.middleware import LoggingMiddleware
 from api.schemas import ClientProfile, HealthResponse, InfoResponse, PredictionResponse
 
@@ -74,6 +76,11 @@ app = FastAPI(
 )
 app.add_middleware(LoggingMiddleware)
 
+# Métriques HTTP + endpoint /metrics (lu par Prometheus)
+Instrumentator(should_group_status_codes=False).instrument(app).expose(
+    app, endpoint="/metrics", include_in_schema=False
+)
+
 
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
@@ -129,6 +136,8 @@ async def predict(profile: ClientProfile, request: Request) -> PredictionRespons
     logger.bind(request_id=request_id).info(
         "Prédiction : proba={proba:.3f} décision={decision}", proba=proba, decision=decision
     )
+
+    observe_prediction(decision=decision, probability=proba)
 
     return PredictionResponse(
         subscription_probability=round(proba, 4),
