@@ -4,11 +4,43 @@ Formulaire pour saisir un profil client et interroger l'API de prédiction.
 """
 
 import os
+import random
 
 import requests
 import streamlit as st
 
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
+
+# Valeurs possibles et plages (issues de l'exploration des données)
+CHOICES = {
+    "default": ["no", "unknown", "yes"],
+    "housing": ["yes", "no", "unknown"],
+    "loan": ["no", "yes", "unknown"],
+    "contact": ["cellular", "telephone"],
+    "month": ["mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"],
+    "day_of_week": ["mon", "tue", "wed", "thu", "fri"],
+}
+RANGES = {
+    "emp_var_rate": (-3.4, 1.4),
+    "cons_price_idx": (92.201, 94.767),
+    "cons_conf_idx": (-50.8, -26.9),
+    "euribor3m": (0.634, 5.045),
+    "nr_employed": (4963.6, 5228.1),
+}
+
+DEFAULTS = {
+    "default": "no",
+    "housing": "yes",
+    "loan": "no",
+    "contact": "cellular",
+    "month": "may",
+    "day_of_week": "mon",
+    "emp_var_rate": 1.1,
+    "cons_price_idx": 93.994,
+    "cons_conf_idx": -36.4,
+    "euribor3m": 4.857,
+    "nr_employed": 5191.0,
+}
 
 st.set_page_config(page_title="Marketing bancaire — Ciblage", page_icon="📞")
 
@@ -18,43 +50,54 @@ st.caption(
     "Outil d'aide à la décision : le conseiller garde la main."
 )
 
+
+def randomize_fields() -> None:
+    """Remplit tous les champs avec des valeurs aléatoires."""
+    for key, options in CHOICES.items():
+        st.session_state[key] = random.choice(options)
+    for key, (low, high) in RANGES.items():
+        st.session_state[key] = round(random.uniform(low, high), 3)
+
+
+for key, value in DEFAULTS.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+st.button("🎲 Valeurs aléatoires", on_click=randomize_fields)
+
 with st.form("client_form"):
     col1, col2 = st.columns(2)
 
     with col1:
-        default = st.selectbox("Crédit en défaut", ["no", "unknown", "yes"])
-        housing = st.selectbox("Prêt immobilier", ["yes", "no", "unknown"])
-        loan = st.selectbox("Prêt personnel", ["no", "yes", "unknown"])
-        contact = st.selectbox("Moyen de contact", ["cellular", "telephone"])
-        month = st.selectbox(
-            "Mois du dernier contact",
-            ["mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"],
-            index=2,
-        )
-        day_of_week = st.selectbox("Jour de la semaine", ["mon", "tue", "wed", "thu", "fri"])
+        st.selectbox("Crédit en défaut", CHOICES["default"], key="default")
+        st.selectbox("Prêt immobilier", CHOICES["housing"], key="housing")
+        st.selectbox("Prêt personnel", CHOICES["loan"], key="loan")
+        st.selectbox("Moyen de contact", CHOICES["contact"], key="contact")
+        st.selectbox("Mois du dernier contact", CHOICES["month"], key="month")
+        st.selectbox("Jour de la semaine", CHOICES["day_of_week"], key="day_of_week")
 
     with col2:
-        emp_var_rate = st.number_input("Taux de variation de l'emploi", value=1.1, step=0.1)
-        cons_price_idx = st.number_input("Indice des prix", value=93.994, step=0.01, format="%.3f")
-        cons_conf_idx = st.number_input("Indice de confiance", value=-36.4, step=0.1)
-        euribor3m = st.number_input("Euribor 3 mois", value=4.857, step=0.01, format="%.3f")
-        nr_employed = st.number_input("Nombre de salariés", value=5191.0, step=1.0)
+        st.number_input("Taux de variation de l'emploi", step=0.1, key="emp_var_rate")
+        st.number_input("Indice des prix", step=0.01, format="%.3f", key="cons_price_idx")
+        st.number_input("Indice de confiance", step=0.1, key="cons_conf_idx")
+        st.number_input("Euribor 3 mois", step=0.01, format="%.3f", key="euribor3m")
+        st.number_input("Nombre de salariés", step=1.0, key="nr_employed")
 
     submitted = st.form_submit_button("Estimer")
 
 if submitted:
     payload = {
-        "default": default,
-        "housing": housing,
-        "loan": loan,
-        "contact": contact,
-        "month": month,
-        "day_of_week": day_of_week,
-        "emp.var.rate": emp_var_rate,
-        "cons.price.idx": cons_price_idx,
-        "cons.conf.idx": cons_conf_idx,
-        "euribor3m": euribor3m,
-        "nr.employed": nr_employed,
+        "default": st.session_state["default"],
+        "housing": st.session_state["housing"],
+        "loan": st.session_state["loan"],
+        "contact": st.session_state["contact"],
+        "month": st.session_state["month"],
+        "day_of_week": st.session_state["day_of_week"],
+        "emp.var.rate": st.session_state["emp_var_rate"],
+        "cons.price.idx": st.session_state["cons_price_idx"],
+        "cons.conf.idx": st.session_state["cons_conf_idx"],
+        "euribor3m": st.session_state["euribor3m"],
+        "nr.employed": st.session_state["nr_employed"],
     }
     try:
         response = requests.post(f"{API_URL}/predict", json=payload, timeout=10)
